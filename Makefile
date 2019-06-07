@@ -8,4 +8,4 @@ clean:
 	rm $(NAME)
 
 $(NAME): upd72020x-load.c
-	gcc -o $@ $^
+	gcc -static -o $@ $^

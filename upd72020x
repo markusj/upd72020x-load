@@ -38,9 +38,6 @@ fi
 if [ ! -x $UPD72020X_FW_CMD ]; then
 	exit 0
 fi
-if [ ! -x $UPD72020X_FW_SCRIPT ]; then
-	exit 0
-fi
 
 . /usr/share/initramfs-tools/scripts/functions
 . /usr/share/initramfs-tools/hook-functions
