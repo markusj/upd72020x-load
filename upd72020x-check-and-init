@@ -1,14 +1,15 @@
 #!/bin/bash
 # Modified by 20190608 K.Ohta <whatisthis.sowhat _at_ gmail.com>
 # Place this script to /etc/initramfs-tools/scripts/init-top .
+# Or, place to /usr/sbin (for booting with systemd)
 # See upd72020x for details.
 
 dir=$(dirname $(readlink -f "$0"))
 
 cd "$dir"
 
-UPD72020X_FWNAME=/lib/modules/renesas/K2026.mem
-UPD72020X_CMD=/sbin/upd72020x-load
+UPD72020X_FWNAME=/lib/firmware/renesas/K2026.mem
+UPD72020X_CMD=/usr/sbin/upd72020x-load
 
 lspci -m | grep uPD720202 | while read device trailer; do
 	if ! dmesg | grep "0000:$device" | tail -n 1 | grep -e "-110" > /dev/null; then

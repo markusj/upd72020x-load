@@ -1,0 +1,33 @@
+# Copyright (C) 2013 Colin Watson.
+#
+# This file is part of binfmt-support.
+#
+# binfmt-support is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# binfmt-support is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with binfmt-support; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
+
+[Unit]
+Description=Load firmware for Renesas uPD72020x USB3 host.
+#Documentation=man:update-binfmts(8)
+DefaultDependencies=false
+After=local-fs.target 
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/sbin/upd72020x-check-and-init
+#ExecStop=/usr/sbin/update-binfmts --disable
+Restart=no
+
+[Install]
+WantedBy=multi-user.target
