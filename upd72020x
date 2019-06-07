@@ -1,0 +1,50 @@
+#!/bin/sh
+# Prepare hook script for initramfs-tools.
+# Modified by 2019-06-08 K.Ohta <whatisthis.sowhat _at_ gmail.com>
+#
+# This is hook script to make uploading firmware of Renesas uPD72020x
+# before loading module "xhci_pci".
+# This firmware *MUST BE* loaded before module loading.
+# Place this file to /etc/initramfs-tools/hooks.d ,
+# place upd72020x-load to /sbin ,
+# place firmware to /lib/firmware/renesas/ and
+# place upc72020x-check-and-init to /lib/initramfs-tools/scripts/init-top .
+# Hint:
+# To get firmware, you should fireware-updator (not driver) from anywhere
+# and extract using wine .(help will show run with /? arg).
+# Then, rename foo.mem to K2026.mem (and copy to /lib/firmware/renesas/).
+
+PREREQ=""
+
+prereqs()
+{
+	echo "$PREREQ"
+}
+
+UPD72020X_FW=/lib/firmware/renesas/K2026.mem
+UPD72020X_FW_CMD=/sbin/upd72020x-load
+UPD72020X_FW_SCRIPT=/sbin/upd72020x-check-and-init
+
+case $1 in
+prereqs)
+	prereqs
+	exit 0
+	;;
+esac
+
+if [ ! -e $UPD72020X_FW ]; then
+	exit 0
+fi
+if [ ! -x $UPD72020X_FW_CMD ]; then
+	exit 0
+fi
+if [ ! -x $UPD72020X_FW_SCRIPT ]; then
+	exit 0
+fi
+
+. /usr/share/initramfs-tools/scripts/functions
+. /usr/share/initramfs-tools/hook-functions
+
+copy_exec $UPD72020X_FW_CMD
+
+

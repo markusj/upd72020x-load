@@ -1,0 +1,35 @@
+#!/bin/bash
+# Modified by 20190608 K.Ohta <whatisthis.sowhat _at_ gmail.com>
+# Place this script to /etc/initramfs-tools/scripts/init-top .
+# See upd72020x for details.
+
+dir=$(dirname $(readlink -f "$0"))
+
+cd "$dir"
+
+UPD72020X_FWNAME=/lib/modules/renesas/K2026.mem
+UPD72020X_CMD=/sbin/upd72020x-load
+
+lspci -m | grep uPD720202 | while read device trailer; do
+	if ! dmesg | grep "0000:$device" | tail -n 1 | grep -e "-110" > /dev/null; then
+		continue # not affected, device got up normally
+	fi
+
+	bus=$( echo "$device" | cut -d : -f 1)
+	dev=$( echo "$device" | cut -d : -f 2 | cut -d . -f 1)
+	fun=$( echo "$device" | cut -d : -f 2 | cut -d . -f 2)
+
+	# place loader to /sbin and firmware to /lib/firmware/renesas
+	$UPD72020X_CMD -u -b 0x$bus -d 0x$dev -f 0x$fun -i $UPD72020X_FWNAME
+
+	sleep 2
+
+	echo 1 > "/sys/bus/pci/devices/0000:$device/remove"
+done
+
+sleep 1
+
+echo 1 > /sys/bus/pci/rescan
+
+exit 0
+
