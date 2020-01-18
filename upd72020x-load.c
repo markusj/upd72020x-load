@@ -201,7 +201,7 @@ int external_rom_access(int fd, bool enable) {
         usleep(8000);
 
         RETURN_ON_ERR(
-            write_bit(fd, EXT_ROM_CTRL_STATUS, ROM_ACCESS_ENABLE, 1),
+            write_bit(fd, EXT_ROM_CTRL_STATUS, ROM_ACCESS_ENABLE, 1) < 0,
             "ERROR: PCI CFG write to enable ROM access failed\n"
         );
 
@@ -218,7 +218,7 @@ int external_rom_access(int fd, bool enable) {
         return -1;
     } else {
         RETURN_ON_ERR(
-            write_bit(fd, EXT_ROM_CTRL_STATUS, ROM_ACCESS_ENABLE, 0),
+            write_bit(fd, EXT_ROM_CTRL_STATUS, ROM_ACCESS_ENABLE, 0) < 0,
             "ERROR: PCI CFG write to disable ROM access failed\n"
         );
 
