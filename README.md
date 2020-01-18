@@ -7,6 +7,7 @@ It provides the functionality to upload the firmware required for certain extens
 
  * First, a firmware image for the chipset is required.
    It might be extracted from the update tool for Windows (either downloaded from the Internet or obtained from a driver disk shipped with the card).
+   I am using version 2.0.2.6. I extracted the firmware image from an updater named `k2026fwup1` with SHA256 hash `9fe8fa750e45580ab594df2ba9435b91f10a6f1281029531c13f179cd8a6523c`. The firmware image has the SHA256 has `177560c224c73d040836b17082348036430ecf59e8a32d7736ce2b80b2634f97`.
  * The firmware image is uploaded using the command `./upd72020x-load -u -b 0x02 -d 0x00 -f 0x0 -i K2026.mem` with -b, -d and -f specifying the PCI bus, device and function address.
  * The script `check-and-init` simplifies the process since it automatically parses the output of `dmesg` for uPD720202 controllers which failed to initialize during boot and attemps to upload the firmware file to them.
  * Code to read and write the (optional) EEPROM (commands `-r` and `-w`) is implemented as well.
