@@ -7,10 +7,13 @@ It provides the functionality to upload the firmware required for certain extens
 
  * First, a firmware image for the chipset is required.
    It might be extracted from the update tool for Windows (either downloaded from the Internet or obtained from a driver disk shipped with the card).
-   I am using version 2.0.2.6. I extracted the firmware image from an updater named `k2026fwup1` with SHA256 hash `9fe8fa750e45580ab594df2ba9435b91f10a6f1281029531c13f179cd8a6523c`. The firmware image has the SHA256 has `177560c224c73d040836b17082348036430ecf59e8a32d7736ce2b80b2634f97`.
- * The firmware image is uploaded using the command `./upd72020x-load -u -b 0x02 -d 0x00 -f 0x0 -i K2026.mem` with -b, -d and -f specifying the PCI bus, device and function address.
- * The script `check-and-init` simplifies the process since it automatically parses the output of `dmesg` for uPD720202 controllers which failed to initialize during boot and attemps to upload the firmware file to them.
-   I simply call it from rc.local.
+   I am using firmware version 2.0.2.6. I extracted the firmware image from an updater named `k2026fwup1` with SHA256 hash `9fe8fa750e45580ab594df2ba9435b91f10a6f1281029531c13f179cd8a6523c`. The firmware image has the SHA256 has `177560c224c73d040836b17082348036430ecf59e8a32d7736ce2b80b2634f97`.
+ * The firmware image is uploaded into the chipset RAM using the command `./upd72020x-load -u -b 0x02 -d 0x00 -f 0x0 -i K2026.mem` with -b, -d and -f specifying the PCI bus, device and function address.
+   This process is non-persistent, the chipset RAM is cleared when the power supply is removed.
+ * The script `upd72020x-check-and-init` automates the upload process. It parses the output of `dmesg` for uPD720202 controllers which failed to initialize during boot and attemps to upload the firmware file to them.
+   I simply call it from rc.local, but a SystemD service file is also included.
+   For using SystemD, please adjust the paths/environment variables in the unit file according to your install locations of script, loader and firmware image.
+   If no environment variables are set, the script presumes that loader and firmware image are co-located with itself in the same directory.
  * Code to read and write the (optional) EEPROM (commands `-r` and `-w`) is implemented as well.
    Reading should work, the write feature is untested, but shares the codebase with the upload feature.
 
@@ -33,4 +36,6 @@ And of course: Use this tool at your own risk!
 ## Acknowledgements
 
 This code is based on the code which was written the comments section of [this blogpost](http://billauer.co.il/blog/2015/11/renesas-rom-setpci/).
+
+The SystemD unit file was originally provided by K.Ohta (@Artanejp)
 

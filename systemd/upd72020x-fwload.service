@@ -1,0 +1,16 @@
+[Unit]
+Description=Load firmware for Renesas uPD72020x USB3.0 host.
+DefaultDependencies=false
+After=local-fs.target 
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/sbin/upd72020x-check-and-init
+Restart=no
+Environment="UPD72020X_FW=/lib/firmware/renesas/K2026.mem"
+Environment="UPD72020X_CMD=/usr/sbin/upd72020x-load"
+
+[Install]
+WantedBy=remote-fs.target
+

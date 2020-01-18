@@ -1,0 +1,50 @@
+#!/bin/bash
+
+dir=$(dirname $(readlink -f "$0"))
+
+cd "$dir"
+
+# set paths to loader and firmware, if not provided by environment
+if [ -z "$UPD72020X_CMD" ]; then
+    UPD72020X_CMD=./upd72020x-load
+fi
+if [ -z "$UPD72020X_FW" ]; then
+    UPD72020X_FWNAME=K2026.mem
+fi
+
+# test if loader and firmware can be found
+if ! [ -x "$UPD72020X_CMD" ]; then
+    echo "upd72020x loader not found at $UPD72020X_CMD"
+
+	exit 1
+fi
+if ! [ -r "$UPD72020X_FW" ]; then
+    echo "upd72020x firmware not found at $UPD72020X_FW"
+
+	exit 2
+fi
+
+
+lspci -m | grep uPD720202 | while read device trailer; do
+	if ! dmesg | grep "0000:$device" | tail -n 1 | grep -e "-110" > /dev/null; then
+		continue # not affected, device got up normally
+	fi
+
+	bus=$( echo "$device" | cut -d : -f 1)
+	dev=$( echo "$device" | cut -d : -f 2 | cut -d . -f 1)
+	fun=$( echo "$device" | cut -d : -f 2 | cut -d . -f 2)
+
+	# upload to RAM only, do not write EEPROM
+	"$UPD72020X_CMD" -u -b 0x$bus -d 0x$dev -f 0x$fun -i "$UPD72020X_FW"
+
+	sleep 2
+
+	echo 1 > "/sys/bus/pci/devices/0000:$device/remove"
+done
+
+sleep 1
+
+echo 1 > /sys/bus/pci/rescan
+
+exit 0
+
