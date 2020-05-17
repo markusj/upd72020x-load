@@ -25,7 +25,7 @@ if ! [ -r "$UPD72020X_FW" ]; then
 fi
 
 
-lspci -m | grep uPD720202 | while read device trailer; do
+lspci -m | egrep "uPD720201|uPD720202" | while read device trailer; do
 	if ! dmesg | grep "0000:$device" | tail -n 1 | grep -e "-110" > /dev/null; then
 		continue # not affected, device got up normally
 	fi

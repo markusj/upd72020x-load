@@ -474,12 +474,14 @@ void usage() {
 }
 
 int main(int argc, char **argv) {
-    unsigned char pcidevid[] = { 0x12, 0x19, 0x15, 0x00 }; //vendor id = 1912 devid = 0015
+    unsigned char pcidevid_x1[] = { 0x12, 0x19, 0x14, 0x00 }; //uPD720201 vendor id = 1912 devid = 0014
+    unsigned char pcidevid_x2[] = { 0x12, 0x19, 0x15, 0x00 }; //uPD720202 vendor id = 1912 devid = 0015
     unsigned char buf[100];
     unsigned int len;
 
     int i, fd;
 
+    bool is_x1, is_x2 = true;
     uint32_t bus, dev, fct;
     uint32_t size = 0x10000;
     uint32_t rflag = 0;
@@ -560,11 +562,22 @@ int main(int argc, char **argv) {
     read(fd, buf, len);
 
     for (i = 0; i < 4; i++) {
-        if (pcidevid[i] != buf[i]) {
-            printf("ERROR: wrong vendorid/devid. We expect a UPD720202 chip and this is not one!");
-            printf(FAILED);
-            exit(1);
+        if (pcidevid_x1[i] != buf[i]) {
+            is_x1 = false;
+        }        
+        if (pcidevid_x2[i] != buf[i]) {
+            is_x2 = false;
         }
+    }
+    
+    if (is_x1) {
+        printf("Found an UPD720201 chipset\n");
+    } else if (is_x2) {
+        printf("Found an UPD720202 chipset\n");
+    } else {
+        printf("ERROR: wrong vendorid/devid. Expected an UPD720201 or UPD720202 chip and this is not one!\n");
+        printf(FAILED);
+        exit(1);
     }
 
     u_int fw_info, rom_info, rom_config;
