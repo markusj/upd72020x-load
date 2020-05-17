@@ -9,7 +9,7 @@ if [ -z "$UPD72020X_CMD" ]; then
     UPD72020X_CMD=./upd72020x-load
 fi
 if [ -z "$UPD72020X_FW" ]; then
-    UPD72020X_FWNAME=K2026.mem
+    UPD72020X_FW=K2026.mem
 fi
 
 # test if loader and firmware can be found
