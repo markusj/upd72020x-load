@@ -1,4 +1,5 @@
 NAME=upd72020x-load
+CC ?= gcc
 
 .PHONY: all clean
 
@@ -8,4 +9,4 @@ clean:
 	rm $(NAME)
 
 $(NAME): upd72020x-load.c
-	gcc -o $@ $^
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^

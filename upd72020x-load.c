@@ -230,7 +230,7 @@ int read_eeprom(int fd, char *filename, unsigned int len) {
     int ofile;
     u_int ix, data01, jx, val32, status;
 
-    ofile = open(filename, O_CREAT | O_RDWR | O_TRUNC);
+    ofile = open(filename, O_CREAT | O_RDWR | O_TRUNC, 0644);
 
     RETURN_ON_ERR(ofile < 0, "ERROR: cant open file %s\n", filename);
 
