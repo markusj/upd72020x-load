@@ -258,7 +258,7 @@ int read_eeprom(int fd, char *filename, unsigned int len) {
             u_int databit = ROM_GET_DATA0 + data01;
 
             for (jx = 0; jx < LOOPNB; jx++) {
-                usleep(1000);
+                usleep(100);
 
                 if ((read_bit(fd, EXT_ROM_CTRL_STATUS, databit, &status) >= 0)
                         && (status == 0)) {
@@ -318,7 +318,7 @@ int do_upload(int fd, int ifile, u_int ctrl_reg) {
 
         // wait for Set DATAx to become zero
         for (jx = 0; jx < LOOPNB; jx++) {
-            usleep(1000);
+            usleep(100);
 
             if ((read_bit(fd, ctrl_reg, databit, &status) >= 0)
                     && (status == 0)) {
@@ -354,7 +354,7 @@ int test_upload_result(int fd, u_int ctrl_reg) {
 
     // test result code
     for (jx = 0; jx < LOOPNB; jx++) {
-        usleep(1000);
+        usleep(100);
 
         if (pci_cfg_read32(fd, ctrl_reg, &status) < 0) {
             status = -1;
