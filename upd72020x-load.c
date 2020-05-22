@@ -10,6 +10,8 @@
 #define FAILED " ======> FAILED\n"
 #define PASSED " ======> PASSED\n"
 #define LOOPNB 100000
+#define POLL_US 10
+#define DELAY_US 1000
 #define ROM_PARAM_INVALID 0xffffffff
 
 #define EXT_FW_VERSION 0x6C
@@ -232,7 +234,7 @@ int external_rom_access(int fd, bool enable) {
             "ERROR: PCI CFG write of EXT_ROM_DATA0 register failed\n"
         );
 
-        usleep(8000);
+        usleep(DELAY_US);
 
         RETURN_ON_ERR(
             write_bit(fd, EXT_ROM_CTRL_STATUS, ROM_ACCESS_ENABLE, 1) < 0,
@@ -240,6 +242,8 @@ int external_rom_access(int fd, bool enable) {
         );
 
         for (ix = 0; ix < LOOPNB; ix++) {
+            usleep(POLL_US);
+
             pci_cfg_read16(fd, EXT_ROM_CTRL_STATUS, &reg);
 
             if ((reg & RESULT_BITMASK) == RESULT_INVALID) {
@@ -292,7 +296,7 @@ int read_eeprom(int fd, char *filename, unsigned int len) {
             u_int databit = ROM_GET_DATA0 + data01;
 
             for (jx = 0; jx < LOOPNB; jx++) {
-                usleep(100);
+                usleep(POLL_US);
 
                 if ((read_bit(fd, EXT_ROM_CTRL_STATUS, databit, &status) >= 0)
                         && (status == 0)) {
@@ -302,7 +306,7 @@ int read_eeprom(int fd, char *filename, unsigned int len) {
 
             RETURN_ON_ERR(jx == LOOPNB, "ERROR: GET_DATAx never go to zero\n");
 
-            usleep(8000);
+            usleep(POLL_US);
 
             //read eeprom
             RETURN_ON_ERR(
@@ -312,15 +316,11 @@ int read_eeprom(int fd, char *filename, unsigned int len) {
 
             write(ofile, &val32, 4);
 
-            usleep(4000);
-
             RETURN_ON_ERR(
                 write_bit(fd, EXT_ROM_CTRL_STATUS, databit, 1) < 0,
                 "ERROR: cant set GET_DATAx\n"
             );
 
-
-            usleep(8000);
         }
     }
 
@@ -355,7 +355,7 @@ int do_upload(int fd, int ifile, u_int ctrl_reg) {
 
         // wait for Set DATAx to become zero
         for (jx = 0; jx < LOOPNB; jx++) {
-            usleep(100);
+            usleep(POLL_US);
 
             if ((read_bit(fd, ctrl_reg, databit, &status) >= 0)
                     && (status == 0)) {
@@ -371,8 +371,7 @@ int do_upload(int fd, int ifile, u_int ctrl_reg) {
             "ERROR: Cant write DATAx register\n"
         );
 
-        // usleep(8000);
-        usleep(1000);
+        usleep(POLL_US);
 
         // trigger write
         // datasheet says, first two bytes should be uploaded together
@@ -400,7 +399,7 @@ int test_upload_result(int fd, u_int ctrl_reg) {
 
     // test result code
     for (jx = 0; jx < LOOPNB; jx++) {
-        usleep(100);
+        usleep(POLL_US);
 
         if (pci_cfg_read32(fd, ctrl_reg, &status) < 0) {
             status = -1;
