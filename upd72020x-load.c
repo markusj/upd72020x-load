@@ -121,6 +121,58 @@ int pci_cfg_write32(int fd, u_int off, u_int val32) {
 }
 
 /**
+ * Support function for reading certain bits from a register
+ *
+ * @param fd
+ *      card file descriptor
+ * @param reg
+ *      register address
+ * @param bitmask
+ *      bit mask used to extract the desired bits
+ * @return
+ *      extracted bits
+ */
+int read_bitmask(u_int fd, u_int reg, u_int bitmask, u_int * value) {
+    int result;
+
+    result = pci_cfg_read16(fd, reg, value);
+
+    *value &= bitmask;
+
+    return result;
+}
+
+/**
+ * Support function for writing certain bits to a register
+ *
+ * @param fd
+ *      card file descriptor
+ * @param reg
+ *      register address
+ * @param bitmask
+ *      bitmask used to select which bits to write
+ * @param value
+ *      value from which the masked bits should be written into the register
+ * @return
+ *      error code
+ */
+int write_bitmask(u_int fd, u_int reg, u_int bitmask, u_int value) {
+    int result;
+    u_int val;
+
+    result = pci_cfg_read16(fd, reg, &val);
+
+    if (result >= 0) {
+        val &= ~bitmask;
+        val |= (value & bitmask);
+
+        return pci_cfg_write16(fd, reg, val);
+    } else {
+        return result;
+    }
+}
+
+/**
  * Support function for reading a bit from a register
  *
  * @param fd
@@ -133,13 +185,7 @@ int pci_cfg_write32(int fd, u_int off, u_int val32) {
  *      bit value
  */
 int read_bit(u_int fd, u_int reg, u_int bit, u_int * value) {
-    int result;
-
-    result = pci_cfg_read16(fd, reg, value);
-
-    *value &= (1 << bit);
-
-    return result;
+    return read_bitmask(fd, reg, 1 << bit, value);
 }
 
 /**
@@ -157,19 +203,7 @@ int read_bit(u_int fd, u_int reg, u_int bit, u_int * value) {
  *      error code
  */
 int write_bit(u_int fd, u_int reg, u_int bit, u_int value) {
-    int result;
-    u_int val;
-
-    result = pci_cfg_read16(fd, reg, &val);
-
-    if (result >= 0) {
-        val &= ~(1 << bit);
-        val |= (value << bit);
-
-        return pci_cfg_write16(fd, reg, val);
-    } else {
-        return result;
-    }
+    return write_bitmask(fd, reg, 1 << bit, value << bit);
 }
 
 int eeprom_exists(int fd) {
@@ -300,12 +334,15 @@ int read_eeprom(int fd, char *filename, unsigned int len) {
 }
 
 int do_upload(int fd, int ifile, u_int ctrl_reg) {
-    u_int status, data01, jx, val32, rc;
+    u_int status, jx, val32, rc;
 
-    data01 = 0;
+    rc = 1; // non-zero start value
 
-    do {
-        u_int databit = ROM_SET_DATA0 + data01;
+    for (u_int i = 0; rc > 0; i++) {
+        // lsb selects wheter upper or lower data register is used
+        const u_int data01 = i & 1;
+        // bit index for "Set DATAx" bit in Contol and Status Register
+        const u_int databit = ROM_SET_DATA0 + data01;
 
         // read next dword
         rc = read(ifile, &val32, 4);
@@ -313,7 +350,7 @@ int do_upload(int fd, int ifile, u_int ctrl_reg) {
         if (rc == 0) {
             break; // done, no more data to write
         }
-        RETURN_ON_ERR(rc < 0, "ERROR: Cant read image file\n");
+        RETURN_ON_ERR(rc < 0, "ERROR: Can't read image file\n");
         RETURN_ON_ERR(rc != 4, "ERROR: Could not get 4 bytes. Only got %x\n", rc);
 
         // wait for Set DATAx to become zero
@@ -338,13 +375,22 @@ int do_upload(int fd, int ifile, u_int ctrl_reg) {
         usleep(1000);
 
         // trigger write
-        RETURN_ON_ERR(
-            write_bit(fd, ctrl_reg, databit, 1) < 0,
-            "ERROR: cant set SET_DATA0\n"
-        );
+        // datasheet says, first two bytes should be uploaded together
+        // before switching to an alternating upload order
+        if (i == 1) {
+            const u_int mask = (1 << ROM_SET_DATA0) | (1 << ROM_SET_DATA1);
 
-        data01 = (data01 + 1) % 2;
-    } while(rc > 0);
+            RETURN_ON_ERR(
+                write_bitmask(fd, ctrl_reg, mask, mask) < 0,
+                "ERROR: can't set SET_DATA01\n"
+            );
+        } else if (i > 1) {
+            RETURN_ON_ERR(
+                write_bit(fd, ctrl_reg, databit, 1) < 0,
+                "ERROR: can't set SET_DATAx\n"
+            );
+        }
+    }
 
     return 0; //Success!
 }
