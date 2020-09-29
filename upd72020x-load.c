@@ -597,8 +597,8 @@ int main(int argc, char **argv) {
 
     fd = open(pcicfgfile, O_RDWR);
     if (fd < 0) {
-        printf("ERROR: cant open PCI CONFIGURATION file %s", pcicfgfile);
-        printf("FAILED");
+        printf("ERROR: cant open PCI CONFIGURATION file %s\n", pcicfgfile);
+        printf("FAILED\n");
         exit(1);
     }
 
@@ -621,6 +621,7 @@ int main(int argc, char **argv) {
         printf("Found an UPD720202 chipset\n");
     } else {
         printf("ERROR: wrong vendorid/devid. Expected an UPD720201 or UPD720202 chip and this is not one!\n");
+        printf("       reported vendorid/devid: %.2x%.2x:%.2x%.2x \n", buf[1], buf[0], buf[3], buf[2]);
         printf(FAILED);
         exit(1);
     }
