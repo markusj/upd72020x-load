@@ -216,17 +216,14 @@ int eeprom_exists(int fd) {
         read_bit(fd, EXT_ROM_CTRL_STATUS, ROM_EXISTS, &reg) < 0,
         "ERROR: PCI CFG read of EXT_ROM_CTRL_STATUS register failed\n"
     );
-    RETURN_ON_ERR(reg == 0, "ERROR: ROM doesnt exist\n");
 
-    return 0;
+    return reg == 0 ? -1 : 0;
 }
 
 int external_rom_access(int fd, bool enable) {
     u_int reg, ix;
 
-    if (eeprom_exists(fd) < 0) {
-        return -1;
-    }
+    RETURN_ON_ERR(eeprom_exists(fd) < 0, "ERROR: ROM doesnt exist\n");
 
     if (enable) {
         RETURN_ON_ERR(
