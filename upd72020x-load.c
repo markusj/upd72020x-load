@@ -648,17 +648,20 @@ int main(int argc, char **argv) {
 
         rom_config = lookup_rompar(rom_info);
 
-        if (rom_config == ROM_PARAM_INVALID) {
+        if (rom_config != ROM_PARAM_INVALID) {
+            printf("setting rom_config: %x\n", rom_config);
+
+            if (pci_cfg_write32(fd, EXT_ROM_CONFIG_REG, rom_config) < 0) {
+                printf("ERROR: failed to set ROM parameter register\n");
+                exit(1);
+            }
+        } else {
             printf("unknown EEPROM, no parameters found\n");
 
-            exit(1);
-        }
-
-        printf("setting rom_config: %x\n", rom_config);
-
-        if (pci_cfg_write32(fd, EXT_ROM_CONFIG_REG, rom_config) < 0) {
-            printf("ERROR: failed to set ROM parameter register\n");
-            exit(1);
+            if ((rflag | wflag) > 0) {
+                printf("ERROR: can not perform action\n");
+                exit(1);
+            }
         }
     }
 
