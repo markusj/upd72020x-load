@@ -30,12 +30,22 @@ lspci -m | egrep "uPD720201|uPD720202" | while read device trailer; do
 		continue # not affected, device got up normally
 	fi
 
+	# attempt to avoid kernel interference on upload process
+	if [ -e /sys/bus/pci/drivers/xhci_hcd/unbind ]; then
+		echo -n 0000:$device > /sys/bus/pci/drivers/xhci_hcd/unbind
+	fi
+
 	bus=$( echo "$device" | cut -d : -f 1)
 	dev=$( echo "$device" | cut -d : -f 2 | cut -d . -f 1)
 	fun=$( echo "$device" | cut -d : -f 2 | cut -d . -f 2)
 
 	# upload to RAM only, do not write EEPROM
 	"$UPD72020X_CMD" -u -b 0x$bus -d 0x$dev -f 0x$fun -i "$UPD72020X_FW"
+
+	# revert change
+	if [ -e /sys/bus/pci/drivers/xhci_hcd/unbind ]; then
+		echo -n 0000:$device > /sys/bus/pci/drivers/xhci_hcd/bind
+	fi
 
 	sleep 2
 

@@ -42,3 +42,4 @@ This code is based on the code which was written the comments section of [this b
 
  * The SystemD unit file was originally provided by K.Ohta (@Artanejp)
  * Vendor and device IDs for uPD720201 chipsets were provided by @j1warren
+ * The workaround for kernel drivers interfering with the upload process was found by @cranphin
