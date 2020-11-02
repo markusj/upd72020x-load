@@ -10,8 +10,11 @@ It provides the functionality to upload the firmware required for certain extens
    I am using firmware version 2.0.2.6 with my uPD720202-based card. I extracted the firmware image from an updater named `k2026fwup1` with SHA256 hash `9fe8fa750e45580ab594df2ba9435b91f10a6f1281029531c13f179cd8a6523c`. The firmware image has the SHA256 has `177560c224c73d040836b17082348036430ecf59e8a32d7736ce2b80b2634f97`.
  * The firmware image is uploaded into the chipset RAM using the command `./upd72020x-load -u -b 0x02 -d 0x00 -f 0x0 -i K2026.mem` with -b, -d and -f specifying the PCI bus, device and function address.
    This process is non-persistent, the chipset RAM is cleared when the power supply is removed.
+ * The error message `ERROR: SET_DATAx never go to zero` is apparently sometimes(?) caused by a conflict with the XHCI kernel driver. 
+   Use `echo -n 0000:02:00.0 > /sys/bus/pci/drivers/xhci_hcd/unbind` before and `echo -n 0000:02:00.0 > /sys/bus/pci/drivers/xhci_hcd/bind` after running upd72020x-load, with the correct PCI address for your computer.
  * The script `upd72020x-check-and-init` automates the upload process. It parses the output of `dmesg` for uPD72020x controllers which failed to initialize during boot and attemps to upload the firmware file to them.
-   I simply call it from rc.local, but a SystemD service file is also included.
+   It also performs the driver unbind/bind commands to work around the conflict with the XHCI kernel driver.
+   I simply call the script from rc.local, but a SystemD service file is also included.
    For using SystemD, please adjust the paths/environment variables in the unit file according to your install locations of script, loader and firmware image.
    If no environment variables are set, the script presumes that loader and firmware image are co-located with itself in the same directory.
  * Code to read and write the (optional) EEPROM (commands `-r` and `-w`) is implemented as well.
