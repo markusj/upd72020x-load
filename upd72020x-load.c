@@ -524,7 +524,7 @@ int main(int argc, char **argv) {
 
     int i, fd;
 
-    bool is_x1, is_x2 = true;
+    bool is_x1 = true, is_x2 = true;
     uint32_t bus, dev, fct;
     uint32_t size = 0x10000;
     uint32_t rflag = 0;
