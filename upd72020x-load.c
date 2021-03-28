@@ -78,6 +78,7 @@ u_int lookup_rompar(const u_int rominfo) {
         case 0x00202012: // M25P20
         case 0x00202013: // M25P40
             return 0x760;
+        case 0x005e2013: // T25S40, undocumented but working in 0x700 mode
         case 0x019D20FF: // Pm25LD512C
         case 0x019D207F: // Pm25LD512C2
         case 0x001F6500: // AT25F512B
@@ -523,7 +524,7 @@ int main(int argc, char **argv) {
 
     int i, fd;
 
-    bool is_x1, is_x2 = true;
+    bool is_x1 = true, is_x2 = true;
     uint32_t bus, dev, fct;
     uint32_t size = 0x10000;
     uint32_t rflag = 0;
