@@ -14,6 +14,7 @@
 #define DELAY_US 1000
 #define ROM_PARAM_INVALID 0xffffffff
 
+// Register addresses
 #define EXT_FW_VERSION 0x6C
 #define EXT_ROM_INFO_REG 0xEC
 #define EXT_ROM_CONFIG_REG 0xF0
@@ -57,6 +58,8 @@
         printf(msg, ##__VA_ARGS__); \
         return -1; \
     }
+#define RETURN_ON_REG_ERR(condition, ...) \
+    RETURN_ON_ERR(condition, "ERROR: failed to access register", ##__VA_ARGS__)
 
 u_int lookup_rompar(const u_int rominfo) {
     switch (rominfo) {
@@ -132,8 +135,10 @@ int pci_cfg_write32(int fd, u_int off, u_int val32) {
  *      register address
  * @param bitmask
  *      bit mask used to extract the desired bits
+ * @param value
+ *      value to which extracted bits whould be written
  * @return
- *      extracted bits
+ *      error code
  */
 int read_bitmask(u_int fd, u_int reg, u_int bitmask, u_int * value) {
     int result;
@@ -184,8 +189,10 @@ int write_bitmask(u_int fd, u_int reg, u_int bitmask, u_int value) {
  *      register address
  * @param bit
  *      bit offset
+ * @param value
+ *      value to which extracted bit whould be written
  * @return
- *      bit value
+ *      error code
  */
 int read_bit(u_int fd, u_int reg, u_int bit, u_int * value) {
     return read_bitmask(fd, reg, 1 << bit, value);
@@ -412,7 +419,7 @@ int test_upload_result(int fd, u_int ctrl_reg) {
 
     RETURN_ON_ERR(
         (status & RESULT_BITMASK) != RESULT_SUCCESS,
-        "ERROR: Writing firmware did not suceed, status register value: %x",
+        "ERROR: Writing firmware did not succeed, status register value: %x",
         status
     );
 
@@ -465,17 +472,35 @@ int write_eeprom(int fd, char *filename, unsigned int len) {
 
 int write_firmware(int fd, char *filename, unsigned int len) {
     int ifile;
+    u_int testVal;
 
     ifile = open(filename, O_RDWR);
     RETURN_ON_ERR(ifile < 0, "ERROR: cant open file image %s\n", filename);
 
+    // test if firmware download is locked
+    RETURN_ON_REG_ERR(
+        read_bit(fd, EXT_FW_DLOAD_CTRL_STATUS, FW_DLOAD_LOCK, &testVal) < 0
+    );
+    if (testVal != 0) {
+        printf("ERROR: firmware download lock is engaged. "
+                "firmware download is not possible until chipset gets a power-on-reset signal. "
+                "try rebooting or even unplugging the powe supply from your computer.\n");
+        return -1;
+    }
+
     printf("STATUS: enabling firmware upload\n");
 
     // enable access
-    RETURN_ON_ERR(
-        write_bit(fd, EXT_FW_DLOAD_CTRL_STATUS, FW_DLOAD_ENABLE, 1) < 0,
-        "ERROR: cant enable access to firmware \n"
+    RETURN_ON_REG_ERR(
+        write_bit(fd, EXT_FW_DLOAD_CTRL_STATUS, FW_DLOAD_ENABLE, 1) < 0
     );
+    RETURN_ON_REG_ERR(
+        read_bit(fd, EXT_FW_DLOAD_CTRL_STATUS, FW_DLOAD_ENABLE, &testVal) < 0
+    );
+    if (testVal != 1) {
+        printf("ERROR: failed to enable firmware upload\n");
+        return -1;
+    }
 
     sleep(1);
 
@@ -490,10 +515,16 @@ int write_firmware(int fd, char *filename, unsigned int len) {
     printf("STATUS: finishing firmware upload\n");
 
     // disable access
-    RETURN_ON_ERR(
-        write_bit(fd, EXT_FW_DLOAD_CTRL_STATUS, FW_DLOAD_ENABLE, 0) < 0,
-        "ERROR: cant disable access to firmware \n"
+    RETURN_ON_REG_ERR(
+        write_bit(fd, EXT_FW_DLOAD_CTRL_STATUS, FW_DLOAD_ENABLE, 0) < 0
     );
+    RETURN_ON_REG_ERR(
+        read_bit(fd, EXT_FW_DLOAD_CTRL_STATUS, FW_DLOAD_ENABLE, &testVal) < 0
+    );
+    if (testVal != 0) {
+        printf("ERROR: failed to finish and disable firmware upload \n");
+        return -1;
+    }
 
     sleep(1);
 
