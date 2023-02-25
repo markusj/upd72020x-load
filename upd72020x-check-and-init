@@ -26,7 +26,9 @@ fi
 
 
 lspci -m | egrep "uPD720201|uPD720202" | while read device trailer; do
+	echo "Found possible uPD72020x on $device"
 	if ! dmesg | grep "0000:$device" | tail -n 1 | grep -e "-110" > /dev/null; then
+	        echo "May already be programmed, skipping."
 		continue # not affected, device got up normally
 	fi
 
@@ -40,6 +42,7 @@ lspci -m | egrep "uPD720201|uPD720202" | while read device trailer; do
 	fun=$( echo "$device" | cut -d : -f 2 | cut -d . -f 2)
 
 	# upload to RAM only, do not write EEPROM
+	echo "Uploading firmware to $device"
 	"$UPD72020X_CMD" -u -b 0x$bus -d 0x$dev -f 0x$fun -i "$UPD72020X_FW"
 
 	# revert change
@@ -50,11 +53,14 @@ lspci -m | egrep "uPD720201|uPD720202" | while read device trailer; do
 	sleep 2
 
 	echo 1 > "/sys/bus/pci/devices/0000:$device/remove"
+	echo "Done with $device"
 done
 
 sleep 1
 
 echo 1 > /sys/bus/pci/rescan
+
+echo "Done with all devices"
 
 exit 0
 
