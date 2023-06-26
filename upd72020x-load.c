@@ -82,6 +82,7 @@ u_int lookup_rompar(const u_int rominfo) {
         case 0x00202013: // M25P40
             return 0x760;
         case 0x005e2013: // T25S40, undocumented but working in 0x700 mode
+        case 0x00856013: // P25Q40H, undocumented but working in 0x700 mode
         case 0x019D20FF: // Pm25LD512C
         case 0x019D207F: // Pm25LD512C2
         case 0x001F6500: // AT25F512B
