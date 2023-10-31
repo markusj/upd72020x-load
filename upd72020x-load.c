@@ -431,7 +431,7 @@ int write_eeprom(int fd, char *filename, unsigned int len) {
 
     int ifile;
 
-    ifile = open(filename, O_RDWR);
+    ifile = open(filename, O_RDONLY);
     RETURN_ON_ERR(ifile < 0, "ERROR: cant open file image %s\n", filename);
 
     printf("STATUS: enabling EEPROM write\n");
@@ -475,7 +475,7 @@ int write_firmware(int fd, char *filename, unsigned int len) {
     int ifile;
     u_int testVal;
 
-    ifile = open(filename, O_RDWR);
+    ifile = open(filename, O_RDONLY);
     RETURN_ON_ERR(ifile < 0, "ERROR: cant open file image %s\n", filename);
 
     // test if firmware download is locked
