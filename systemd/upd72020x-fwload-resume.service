@@ -1,0 +1,11 @@
+[Unit]
+Description=Restart firmware loader after system resume
+After=suspend.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/systemctl restart upd72020x-fwload
+
+[Install]
+WantedBy=suspend.target
+
