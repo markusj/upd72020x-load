@@ -67,6 +67,7 @@ u_int lookup_rompar(const u_int rominfo) {
         case 0x00C22011: // MX25L1006E
         case 0x00C22012: // MX25L2006E
         case 0x00C22013: // MX25L4006E
+        case 0x00C22016: // MX25L3233F, undocumented but working in 0x700 mode
             return 0x700;
         case 0x00C22210: // MX25L5121E
         case 0x00C22211: // MX25L1021E
