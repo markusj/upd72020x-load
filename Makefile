@@ -6,7 +6,7 @@ CC ?= gcc
 all: $(NAME)
 
 clean:
-	rm $(NAME)
+	rm -f $(NAME)
 
 $(NAME): upd72020x-load.c
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^
