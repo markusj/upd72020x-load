@@ -542,8 +542,21 @@ int write_firmware(int fd, char *filename, unsigned int len) {
 }
 
 void usage() {
-
     printf("upd72020x-load: version 0.1\n");
+    printf("Utility to read/write eeprom and upload firmware to\n");
+    printf("NEC uPD720201/2 USB 3.0 host controller\n");
+    printf("\t-r : read eeprom to file\n");
+    printf("\t-w : write file to eeprom\n");
+    printf("\t-u : upload file to firmware memory\n");
+    printf("\t-b : specify PCI bus (hex)\n");
+    printf("\t-d : specify PCI device (hex)\n");
+    printf("\t-D : specify PCI domain (hex) (default 0)\n");
+    printf("\t-f : specify PCI function (hex)\n");
+    printf("\t-s : specify size to read/write/upload (hex) (default 0x10000 or 64KB)\n");
+    printf("\t-o : specify output file for reading eeprom\n");
+    printf("\t-i : specify input file for writing eeprom or uploading firmware\n");
+    printf("\n");
+
     printf("usage: upd72020 -r -b bus -d dev -f fct -s -o outfile : read eeprom to file (size default is 0x10000 or 64KB)\n");
     //printf("usage: upd7202 -c -b -d -f -s -i outfile : check eeprom against file\n");
     printf("usage: upd72020 -w -b bus -d dev -f fct -i infile : write file to eeprom\n");
@@ -564,18 +577,14 @@ int main(int argc, char **argv) {
     uint32_t rflag = 0;
     uint32_t wflag = 0;
     uint32_t uflag = 0;
-    uint32_t bflag, dflag, fflag, sflag, fileflag = 0;
+    uint32_t bflag, dflag, fflag, sflag, infileflag = 0, outfileflag = 0;
     char *filename = NULL;
     char pcicfgfile[100];
     int c;
     opterr = 0;
+    int domain = 0; //default domain 0
 
-    if (argc < 10) {
-        usage();
-        exit(1);
-    }
-
-    while ((c = getopt(argc, argv, "rwub:d:f:o:i:l:s:")) != -1) {
+    while ((c = getopt(argc, argv, "rwub:D:d:f:o:i:l:s:")) != -1) {
         switch (c) {
             case 'r':
                 printf("Doing the reading\n");
@@ -597,6 +606,9 @@ int main(int argc, char **argv) {
                 dflag = 1;
                 dev = strtol(optarg, NULL, 16); //hex numbers for size!!!
                 break;
+            case 'D':
+                domain = strtol(optarg, NULL, 16); //hex numbers for domain!!!
+                break;
             case 'f':
                 fflag = 1;
                 fct = strtol(optarg, NULL, 16); //hex numbers for size!!!
@@ -606,26 +618,55 @@ int main(int argc, char **argv) {
                 size = strtol(optarg, NULL, 16); //hex numbers for size!!!
                 break;
             case 'o':
-                fileflag = 1;
+                outfileflag = 1;
                 filename = optarg; //hex numbers for size!!!
                 break;
             case 'i':
-                fileflag = 1;
+                infileflag = 1;
                 filename = optarg; //hex numbers for size!!!
                 break;
-
+            case '?':
+                printf("unknown option: -%c\n", optopt);
+                usage();
+                exit(1);
             default:
                 break;
         }
     }
 
+    // Verify the command line arguments
+    if ((rflag + wflag + uflag) != 1) {
+        printf("ERROR: Please specify exactly one action\n");
+        usage();
+        exit(1);
+    }
+
+    if ((bflag & dflag & fflag) == 0) {
+        printf("ERROR: Please specify bus, device and function\n");
+        usage();
+        exit(1);
+    }
+
+    if ((rflag == 1) && (outfileflag == 0)) {
+        printf("ERROR: Please specify an output file\n");
+        usage();
+        exit(1);
+    }
+
+    if (((wflag == 1) || (uflag == 1)) && (infileflag == 0)) {
+        printf("ERROR: Please specify an input file\n");
+        usage();
+        exit(1);
+    }
+
+    printf("domain = %d \n", domain);
     printf("bus = %x \n", bus);
     printf("dev = %x \n", dev);
     printf("fct = %x \n", fct);
     printf("fname = %s \n", filename);
 
-    sprintf(pcicfgfile, "/sys/bus/pci/devices/0000:%02x:%02x.%01x/config",
-            bus, dev, fct);
+    sprintf(pcicfgfile, "/sys/bus/pci/devices/%04x:%02x:%02x.%01x/config",
+            domain, bus, dev, fct);
 
     fd = open(pcicfgfile, O_RDWR);
     if (fd < 0) {
@@ -634,7 +675,7 @@ int main(int argc, char **argv) {
         exit(1);
     }
 
-// make sure the device is the right one.
+    // make sure the device is the right one.
     len = 4;
     read(fd, buf, len);
 
