@@ -61,6 +61,8 @@
 #define RETURN_ON_REG_ERR(condition, ...) \
     RETURN_ON_ERR(condition, "ERROR: failed to access register", ##__VA_ARGS__)
 
+#define DEFAULT_CONTROLLER 0
+
 u_int lookup_rompar(const u_int rominfo) {
     switch (rominfo) {
         case 0x00C22010: // MX25L512E
@@ -545,9 +547,10 @@ void usage() {
 
     printf("upd72020x-load: version 0.1\n");
     printf("usage: upd72020 -r -b bus -d dev -f fct -s -o outfile : read eeprom to file (size default is 0x10000 or 64KB)\n");
-    //printf("usage: upd7202 -c -b -d -f -s -i outfile : check eeprom against file\n");
     printf("usage: upd72020 -w -b bus -d dev -f fct -i infile : write file to eeprom\n");
     printf("usage: upd72020 -u -b bus -d dev -f fct -i infile : upload file to firmware memory\n");
+    printf("** NOTE add '-c controller' if system has more than one PCIe controller\n");
+    printf("   i.e. lspci addresses are in the form 'NNNN:NN:NN.N\n");
 }
 
 int main(int argc, char **argv) {
@@ -559,12 +562,12 @@ int main(int argc, char **argv) {
     int i, fd;
 
     bool is_x1 = true, is_x2 = true;
-    uint32_t bus, dev, fct;
+    uint32_t controller = DEFAULT_CONTROLLER, bus, dev, fct;
     uint32_t size = 0x10000;
     uint32_t rflag = 0;
     uint32_t wflag = 0;
     uint32_t uflag = 0;
-    uint32_t bflag, dflag, fflag, sflag, fileflag = 0;
+    uint32_t cflag, bflag, dflag, fflag, sflag, fileflag = 0;
     char *filename = NULL;
     char pcicfgfile[100];
     int c;
@@ -575,7 +578,7 @@ int main(int argc, char **argv) {
         exit(1);
     }
 
-    while ((c = getopt(argc, argv, "rwub:d:f:o:i:l:s:")) != -1) {
+    while ((c = getopt(argc, argv, "rwuc:b:d:f:o:i:l:s:")) != -1) {
         switch (c) {
             case 'r':
                 printf("Doing the reading\n");
@@ -589,17 +592,21 @@ int main(int argc, char **argv) {
                 printf("Doing the upload\n");
                 uflag = 1;
                 break;
+            case 'c':
+                cflag = 1;
+                controller = strtoul(optarg, NULL, 16); //hex numbers for controller!!!
+                break;
             case 'b':
                 bflag = 1;
-                bus = strtoul(optarg, NULL, 16); //hex numbers for size!!!
+                bus = strtoul(optarg, NULL, 16); //hex numbers for bus!!!
                 break;
             case 'd':
                 dflag = 1;
-                dev = strtol(optarg, NULL, 16); //hex numbers for size!!!
+                dev = strtol(optarg, NULL, 16); //hex numbers for device!!!
                 break;
             case 'f':
                 fflag = 1;
-                fct = strtol(optarg, NULL, 16); //hex numbers for size!!!
+                fct = strtol(optarg, NULL, 16); //hex numbers for function!!!
                 break;
             case 's':
                 sflag = 1;
@@ -619,13 +626,14 @@ int main(int argc, char **argv) {
         }
     }
 
+    printf("controller = %x \n", controller);
     printf("bus = %x \n", bus);
     printf("dev = %x \n", dev);
     printf("fct = %x \n", fct);
     printf("fname = %s \n", filename);
 
-    sprintf(pcicfgfile, "/sys/bus/pci/devices/0000:%02x:%02x.%01x/config",
-            bus, dev, fct);
+    sprintf(pcicfgfile, "/sys/bus/pci/devices/%04x:%02x:%02x.%01x/config",
+            controller, bus, dev, fct);
 
     fd = open(pcicfgfile, O_RDWR);
     if (fd < 0) {
